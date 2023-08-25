@@ -1,17 +1,21 @@
-//
-//  WebViewExampleApp.swift
-//  WebViewExample
-//
-//  Created by lamb on 2023/08/25.
-//
-
 import SwiftUI
 
 @main
 struct WebViewExampleApp: App {
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
-        }
+  @ObservedObject var param = Param()
+  var body: some Scene {
+    WindowGroup {
+      ContentView()
+        .environmentObject(param)
     }
+  }
+}
+
+class Param: ObservableObject {
+  @Published var exception: (String) -> Void = { _ in }
+}
+
+func isRunningTests() -> Bool {
+  let env: [String: String] = ProcessInfo.processInfo.environment
+  return env["XCInjectBundleInto"] != nil
 }
