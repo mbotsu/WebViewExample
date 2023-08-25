@@ -17,12 +17,7 @@ final class WebViewExampleTests: XCTestCase {
       exp.fulfill()
     }
     
-    var sut = ContentView()
-    sut.on(\.didAppear) { view in
-      let uiView = try view.view(WebUIViewControllerRepresentable.self).actualView().viewController()
-      uiView.loadViewIfNeeded()
-    }
-    
+    let sut = ContentView()
     ViewHosting.host(view: sut
       .environmentObject(param)
     )

@@ -3,10 +3,9 @@ import UIKit
 import WebKit
 
 struct ContentView: View {
-  var didAppear: ((Self) -> Void)?
   var body: some View {
     VStack {
-      WebUIViewControllerRepresentable()
+      WebUIViewController()
     }
     .padding()
   }
@@ -18,58 +17,40 @@ struct ContentView_Previews: PreviewProvider {
   }
 }
 
-struct WebUIViewControllerRepresentable: UIViewControllerRepresentable {
-  typealias UIViewControllerType = WebUIViewController
+struct WebUIViewController: UIViewControllerRepresentable {
+  typealias UIViewControllerType = UIViewController
   @EnvironmentObject var param: Param
+  let htmlFileName = "index"
+  let onError: (WebViewError) -> Void = { error in
+    print("\(error.message)")
+  }
   
-  func makeUIViewController(context: Context) -> WebUIViewController {
-    return WebUIViewController(self)
+  func makeUIViewController(context: Context) -> UIViewController {
+    let config = WKWebViewConfiguration()
+    let webView = WKWebView(frame: .zero, configuration: config)
+    webView.navigationDelegate = context.coordinator
+    webView.load(htmlFileName, onError: onError)
+    let view = UIViewController()
+    view.view = webView
+    return view
   }
   
   func updateUIViewController(_ uiViewController: UIViewControllerType, context: Context) {}
-}
-
-class WebUIViewController: UIViewController {
-  var viewcController: WebUIViewControllerRepresentable
-  var webView: WKWebView!
-  var coordinator: WebViewDelegate!
   
-  init(_ viewcController: WebUIViewControllerRepresentable) {
-    self.viewcController = viewcController
-    super.init(nibName: nil, bundle: nil)
+  func makeCoordinator() -> Coordinator {
+    Coordinator(self)
   }
   
-  required init?(coder: NSCoder) {
-    fatalError("init(coder:) has not been implemented")
-  }
-  
-  override func viewDidLoad() {
-    super.viewDidLoad()
-    
-    let config = WKWebViewConfiguration()
-    coordinator = WebViewDelegate(viewcController)
-    
-    let htmlFileName = "index"
-    let onError: (WebViewError) -> Void = { error in
-      print("\(error.message)")
+  class Coordinator: NSObject, WKNavigationDelegate {
+    var parent: WebUIViewController
+    init(_ parent: WebUIViewController) {
+      self.parent = parent
     }
     
-    webView = WKWebView(frame: .zero, configuration: config)
-    webView.navigationDelegate = coordinator
-    webView.load(htmlFileName, onError: onError)
-    self.view = self.webView
-  }
-}
-
-class WebViewDelegate: NSObject, WKNavigationDelegate {
-  var parent: WebUIViewControllerRepresentable
-  init(_ parent: WebUIViewControllerRepresentable) {
-    self.parent = parent
-  }
-  
-  func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-    if isRunningTests() {
-      parent.param.exception("complete")
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+      if isRunningTests() {
+        parent.param.exception("complete")
+      }
     }
   }
 }
